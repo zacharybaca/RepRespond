@@ -1,54 +1,34 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import express from 'express';
 import mongoose from 'mongoose';
-import app from './app.js';
+import cors from 'cors';
+import dotenv from 'dotenv';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Initialize environment variables
+dotenv.config();
 
-dotenv.config({ path: path.resolve(__dirname, '.env') });
-
+const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
-let server;
 
-if (!MONGO_URI) {
-  console.error('FATAL: Missing required environment variable: MONGO_URI');
-  process.exit(1);
-}
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log('MongoDB connected');
-    server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  })
-  .catch((err) => {
-    console.error('DB connection error:', err);
-    process.exit(1);
-  });
+// Database Connection
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('Connected to MongoDB Atlas'))
+  .catch((err) => console.error('MongoDB connection error:', err));
 
-const gracefulShutdown = async (signal) => {
-  console.log(`Received ${signal}. Shutting down gracefully...`);
-  try {
-    if (server) {
-      await new Promise((resolve, reject) => {
-        server.close((err) => {
-          if (err) return reject(err);
-          resolve();
-        });
-      });
-      console.log('HTTP server closed');
-    }
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed');
-    process.exit(0);
-  } catch (err) {
-    console.error('Error during shutdown:', err);
-    process.exit(1);
-  }
-};
+// Health Check Route
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'OK', message: 'RepRespond server is up and running' });
+});
 
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+// Placeholder for future API routes
+// app.use('/api/auth', authRoutes);
+// app.use('/api/templates', templateRoutes);
+
+// Start Server
+app.listen(PORT, () => {
+  console.log(`Server listening on port ${PORT}`);
+});
