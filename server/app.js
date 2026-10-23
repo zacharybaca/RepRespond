@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -21,6 +22,7 @@ if (process.env.NODE_ENV !== 'test') {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 app.get('/api/health', (_req, res) => {
   res.status(200).json({ success: true, message: 'API is running' });
